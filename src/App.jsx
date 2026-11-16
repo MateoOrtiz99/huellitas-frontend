@@ -1,10 +1,14 @@
 
+
+import Header from './components/Header';
+import Bienvenida from './components/Bienvenida';
 import MascotasSection from './components/MascotasSection';
 
 function App() {
   return (
     <div>
-      <h1>Huellitas 🐾</h1>
+      <Header />
+      <Bienvenida />
       <MascotasSection />
     </div>
   );

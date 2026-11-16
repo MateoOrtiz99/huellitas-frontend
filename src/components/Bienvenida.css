@@ -1,0 +1,20 @@
+
+.bienvenida {
+  max-width: 850px;
+  margin: 30px auto;
+  padding: 25px;
+  text-align: center;
+  background-color: #eaf4ee;
+  border-radius: 15px;
+}
+
+.bienvenida h2 {
+  color: #38765b;
+  font-size: 27px;
+}
+
+.bienvenida p {
+  color: #444;
+  font-size: 16px;
+  line-height: 1.6;
+}
