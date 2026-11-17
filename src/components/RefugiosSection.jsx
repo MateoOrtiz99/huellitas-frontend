@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-
+import "./RefugiosSection.css";
 const API_URL = "http://127.0.0.1:8000/api/refugios/";
 
 export default function RefugiosSection() {
