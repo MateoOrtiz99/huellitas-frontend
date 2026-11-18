@@ -1,11 +1,13 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './MascotasSection.css';
+
+const API_URL = 'http://127.0.0.1:8000/api';
 
 function MascotasSection() {
   const [mascotas, setMascotas] = useState([]);
   const [refugios, setRefugios] = useState([]);
-  const [cargando, setCargando] = useState(false);
+  const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
 
   const [nombre, setNombre] = useState('');
@@ -13,15 +15,108 @@ function MascotasSection() {
   const [estado, setEstado] = useState('');
   const [refugio, setRefugio] = useState('');
 
-  function agregarMascota(e) {
+  // Cargar mascotas y refugios desde Django
+  useEffect(() => {
+    async function cargarDatos() {
+      try {
+        setCargando(true);
+        setError('');
+
+        const respuestaMascotas = await fetch(`${API_URL}/mascotas/`);
+        const respuestaRefugios = await fetch(`${API_URL}/refugios/`);
+
+        if (!respuestaMascotas.ok || !respuestaRefugios.ok) {
+          throw new Error('No se pudieron cargar los datos.');
+        }
+
+        const datosMascotas = await respuestaMascotas.json();
+        const datosRefugios = await respuestaRefugios.json();
+
+        setMascotas(datosMascotas);
+        setRefugios(datosRefugios);
+
+      } catch (err) {
+        setError('Error al conectar con el servidor.');
+      } finally {
+        setCargando(false);
+      }
+    }
+
+    cargarDatos();
+  }, []);
+
+  // Registrar una mascota
+  async function agregarMascota(e) {
     e.preventDefault();
+    setError('');
 
     if (!nombre || !especie || !estado || !refugio) {
       setError('Completa todos los campos.');
       return;
     }
 
-    setError('Todavía falta conectar el formulario con el backend.');
+    try {
+      setCargando(true);
+
+      const respuesta = await fetch(`${API_URL}/mascotas/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nombre,
+          especie,
+          estado,
+          refugio: Number(refugio),
+        }),
+      });
+
+      if (!respuesta.ok) {
+        throw new Error('No se pudo registrar la mascota.');
+      }
+
+      const nuevaMascota = await respuesta.json();
+
+      setMascotas((anteriores) => [...anteriores, nuevaMascota]);
+
+      setNombre('');
+      setEspecie('');
+      setEstado('');
+      setRefugio('');
+
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setCargando(false);
+    }
+  }
+
+  // Eliminar una mascota
+  async function eliminarMascota(id) {
+    const confirmar = window.confirm(
+      '¿Estás segura de eliminar esta mascota?'
+    );
+
+    if (!confirmar) return;
+
+    try {
+      setError('');
+
+      const respuesta = await fetch(`${API_URL}/mascotas/${id}/`, {
+        method: 'DELETE',
+      });
+
+      if (!respuesta.ok) {
+        throw new Error('No se pudo eliminar la mascota.');
+      }
+
+      setMascotas((anteriores) =>
+        anteriores.filter((mascota) => mascota.id !== id)
+      );
+
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
   return (
@@ -55,6 +150,7 @@ function MascotasSection() {
           onChange={(e) => setRefugio(e.target.value)}
         >
           <option value="">Selecciona un refugio</option>
+
           {refugios.map((r) => (
             <option key={r.id} value={r.id}>
               {r.nombre}
@@ -62,18 +158,33 @@ function MascotasSection() {
           ))}
         </select>
 
-        <button type="submit">Registrar mascota</button>
+        <button type="submit" disabled={cargando}>
+          {cargando ? 'Procesando...' : 'Registrar mascota'}
+        </button>
       </form>
 
       {error && <p>{error}</p>}
 
       <h3>Mascotas registradas</h3>
 
-      {mascotas.length === 0 ? (
+      {cargando ? (
+        <p>Cargando información...</p>
+      ) : mascotas.length === 0 ? (
         <p>No hay mascotas registradas todavía.</p>
       ) : (
         mascotas.map((mascota) => (
-          <p key={mascota.id}>{mascota.nombre}</p>
+          <div key={mascota.id}>
+            <p>
+              **{mascota.nombre}** - {mascota.especie} - {mascota.estado}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => eliminarMascota(mascota.id)}
+            >
+              Eliminar
+            </button>
+          </div>
         ))
       )}
     </section>
